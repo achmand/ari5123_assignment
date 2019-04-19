@@ -9,7 +9,6 @@ from binance.client import Client
 import lucrum.datareader.dataconst as dcons
 from lucrum.datareader.base import _BaseData
 
-
 ###### binance data api class #############################################
 class BinanceData(_BaseData):
     """Gets historical cryptocurrency data from Binance API.      
