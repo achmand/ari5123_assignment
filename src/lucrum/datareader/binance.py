@@ -7,10 +7,10 @@ import numpy as np
 import pandas as pd
 from binance.client import Client 
 import lucrum.datareader.dataconst as dcons
-from lucrum.datareader.base import _BaseData
+from lucrum.datareader.base import BaseData
 
 ###### binance data api class #############################################
-class BinanceData(_BaseData):
+class BinanceData(BaseData):
     """Gets historical cryptocurrency data from Binance API.      
     """
 
@@ -30,7 +30,7 @@ class BinanceData(_BaseData):
 
     def __init__(self, symbols, start, end, interval, limit=500, timezone=None, 
                 api_key="api-key", api_secret="api-secret", requests_params=None):
-        
+   
         """Binance data reader constructor.
         
         Parameters 

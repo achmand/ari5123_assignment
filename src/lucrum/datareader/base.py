@@ -6,7 +6,7 @@
 from abc import ABC, abstractmethod
 
 ###### base data api class ################################################
-class _BaseData():
+class BaseData():
     """Base class for datareaders used to get historical data.      
     """
 

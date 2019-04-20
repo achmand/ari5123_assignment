@@ -1,2 +1,3 @@
 """Top level API for datareader."""
-from .data import (get_data_binance)
+# TODO -> in the future fork pandas datareader
+from .data import (get_data, get_data_binance)
