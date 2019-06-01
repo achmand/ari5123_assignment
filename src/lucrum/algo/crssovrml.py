@@ -8,6 +8,8 @@ import lucrum.datareader as ldr
 from lucrum.algo import _utils as utl
 import lucrum.datareader.dataconst as dcons
 
+###### stacked (ensemble) classifier class ################################
+
 ###### moving average crossover machine learning class ####################
 class MaCrssoverMl():
     """Predicts moving average crossover using machine learning.      
@@ -89,7 +91,6 @@ class MaCrssoverMl():
 
         # drop na from df
         df = df.dropna()
-
         feature_list = []
 
         # create features from lagged MA 

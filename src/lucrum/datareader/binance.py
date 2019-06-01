@@ -5,8 +5,8 @@
 ###### importing dependencies #############################################
 import numpy as np 
 import pandas as pd
+import lucrum.dataconst as dcons
 from binance.client import Client 
-import lucrum.datareader.dataconst as dcons
 from lucrum.datareader.base import BaseData
 
 ###### binance data api class #############################################
