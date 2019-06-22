@@ -1,1 +1,1 @@
-from .macrossover import (MaCrossoverAlgo)
+from .macrossover import (EMACrossoverAlgo)
