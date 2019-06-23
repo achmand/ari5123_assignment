@@ -36,13 +36,28 @@ class _Controller():
         raise NotImplementedError("Should implement gen_positions().")
 
     @abstractmethod
-    def evaluate(self, data):
+    def evaluate(self, data, trading_fee):
         """Evaluates the performance for this strategy.
         
         Parameters 
         ----------
         data: pandas dataframe 
             Holds positions for a specific asset.
+        trading_fee: float
+            The trading fee applied which each trade. 
         """
         
         raise NotImplementedError("Should implement evaluate().")
+
+    @abstractmethod
+    def stats_perf(self, data):
+        """Prints stats for evaluation for this strategy.
+        
+        Parameters 
+        ----------
+        data: pandas dataframe 
+            Holds profit/losses for a specific asset.
+        """
+        
+        raise NotImplementedError("Should implement stats_perf().")
+
