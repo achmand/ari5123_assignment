@@ -75,14 +75,29 @@ class MACrossoverAlgo(_Controller):
 
         # set position at time t 
         data["position"] = data.long_position + data.short_position
-        
-    def evaluate(self, data):
+
+        # once we generate positions find indices where to apply tx cost 
+        # basically we check for any changes between long and short 
+        # except when we are not in a trade at all
+        data["apply_fee"] = 0
+        fee_indices = data[data["position"] != 0]["position"].diff()[data["position"].diff() != 0].index.values
+        data.loc[fee_indices, "apply_fee"] = 1 # fee for entry trade 
+
+        # we know that we are always in a trade with this method
+        # so since we applied a fee for positions where there is a change from 1 to -1 or 1 to -1
+        # we need to add a fee to the index previous to the change (exiting a trade)
+        fee_indices = (fee_indices - 1)[1:] # we skip the first instance since it's the first entry 
+        data.loc[fee_indices, "apply_fee"] = 1  # apply fee for exiting trades 
+
+    def evaluate(self, data, trading_fee):
         """Evaluates/calculates performance from the positions generated.  
 
         Parameters 
         ----------
         data: pandas dataframe 
             Holds positions generated when apply the gen_positions function.
+        trading_fee: float
+            The trading fee applied which each trade. 
         """
 
         # firstly calculate log returns
@@ -92,8 +107,20 @@ class MACrossoverAlgo(_Controller):
         # calculate profit and loss 
         data["pl"] = data["position"].shift(1) * data["log_returns"]
 
+        # new we need to apply fee in profit and loss when we entered or exited a trade
+        # first we get index where a fee is suppose to be applied 
+        fee_indices = data.loc[data.apply_fee == 1].index.values + 1
+
+        # must check index does not go beyond shape 
+        # special case when last row is a trade 
+        fee_indices = fee_indices[fee_indices<data.shape[0]]
+
+        # now we apply fee to the p/l at location where the trade was made + 1
+        data.loc[fee_indices , "pl"] =  (1 - trading_fee) * data["pl"]
+
         # cumulative profit and loss 
         data["cum_pl"] = data["pl"].cumsum()
+
 
     def plot_pos(self, data):
         fig = plt.figure(figsize=(15,9))
@@ -123,24 +150,39 @@ class MACrossoverAlgo(_Controller):
     def stats_perf(self, data):
         
         # print date from and to 
+        days_difference = data.tail(1)["close_time"].values[0] - data.head(1)["open_time"].values[0]
+        days_difference = int(round(days_difference / np.timedelta64(1, 'D')))
+
         time_from = data.head(1)["open_time"].astype(str).values[0]
         time_to = data.tail(1)["close_time"].astype(str).values[0]
-        print("From {} to {}".format(time_from, time_to))
+        print("From {} to {} ({} days)\n".format(time_from, time_to, days_difference))
         
-        # print profit/loss 
+        # print total number of trades
+        # we can sum up every time a fee was applied to get total trades 
+        print("Total number of trades: {}".format(data.apply_fee.sum()))
+
+        # print avg. trades per date
+        print("Avg. trades per day: {}".format(round(data.apply_fee.sum() / days_difference, 2)))
+
+        # print profit/loss (log returns)
         cum_return = round(data["cum_pl"].iloc[-1] * 100, 2)
-        print("Profit/Loss: {0}%".format(cum_return))  
+        print("Profit/Loss [Log Return]: {0}%".format(cum_return))  
+        
 
-        #print maximum loss 
-        min_cum_pl = round(data["cum_pl"].min() * 100, 2)
-        print("Maximum Loss (Min Cumulative Profit/Loss): {0}%".format(min_cum_pl))
+        # print profit/loss (simple return)
+        simple_return = (np.exp(data.iloc[-1].cum_pl) - 1) * 100
+        print("Profit/Loss [Simple Return]: {0}%".format(round(simple_return, 2)))  
 
-        # print maximum gains
+        # print maximum gains (log returns)
         max_cum_pl = round(data["cum_pl"].max() * 100, 2)
-        print("Maximum Gain (Max Cumulative Profit/Loss): {0}%".format(max_cum_pl))
+        print("Maximum Gain: {0}%".format(max_cum_pl))
 
-        # print number of trades 
-        trades = data[(data["position"] != 0 )].groupby(data['position'].ne(data['position'].shift()).cumsum())['position'].value_counts().shape[0]
-        print("Total number of trades: {}".format(trades))
+        #print maximum loss (log returns) 
+        min_cum_pl = round(data["cum_pl"].min() * 100, 2)
+        print("Maximum Drawdown: {0}%".format(min_cum_pl))
 
-        #
+        # print sharpe ratio 
+        # 96 (15 minutes in a day) and 365 days for the crypto market 
+        # we compute the sharpe ratio based on profit and loss 
+        sharpe_ratio = np.sqrt(96 * 365) * data.pl.mean() / data.pl.std()
+        print("Annualised Sharpe Ratio: {0}".format(round(sharpe_ratio, 6)))

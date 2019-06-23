@@ -89,9 +89,6 @@ class BuyHoldStrategy(_Controller):
         # print total number of trades, in this strategy always 1 
         print("Total number of trades: {}".format(1))
 
-        # print std. of return per trade in this case N/A as one trade was executed 
-        print("Standard Deviation of return per trade: {}".format("N/A"))
-
         # print profit/loss (log returns)
         cum_return = round(data["cum_pl"].iloc[-1] * 100, 2)
         print("Profit/Loss [Log Return]: {0}%".format(cum_return))  
