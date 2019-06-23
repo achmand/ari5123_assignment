@@ -142,3 +142,5 @@ class MACrossoverAlgo(_Controller):
         # print number of trades 
         trades = data[(data["position"] != 0 )].groupby(data['position'].ne(data['position'].shift()).cumsum())['position'].value_counts().shape[0]
         print("Total number of trades: {}".format(trades))
+
+        #
