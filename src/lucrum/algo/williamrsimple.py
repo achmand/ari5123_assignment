@@ -49,7 +49,7 @@ class SimpleWilliamRAlgo(_Controller):
         overbought: int
             The value which indicates an overbought. If the reading is above this value. 
         oversold: int
-            The value which indicates an oversold. If the reading is beow this value. 
+            The value which indicates an oversold. If the reading is below this value. 
         """
 
         # generates signals 

@@ -32,7 +32,7 @@ class SimpleRsiAlgo(_Controller):
 
         # set config for ta-lib
         ta_config = {
-            "rsi":[("rsi", {"timeperiod":window, "price":price})]
+            "rsi":[("rsi", {"timeperiod": window, "price": price})]
         }
 
         # apply RSI to dataframe

@@ -52,7 +52,7 @@ class RsiNatrAlgo(_Controller):
         data: pandas dataframe 
             Holds data/prices/features for a specific asset.
         volatility: float
-            The threshold used by NATR to give a singal 
+            The threshold used by NATR to give a signal.
         upper: int
             The upper bound which indicates an overbought (> 1 and < 100).
         lower: int
