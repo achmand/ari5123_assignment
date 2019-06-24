@@ -52,19 +52,24 @@ class BuyHoldStrategy(_Controller):
         data["cum_pl"] = data["log_returns"].cumsum()
 
     def plot_pos(self, data):
+
+        # figure size
         fig = plt.figure(figsize=(15,9))
+        
+        # closing price plot 
         ax = fig.add_subplot(2,1,1)
-
         ax.plot(data["close"], label="Close Price")
-
         ax.set_ylabel("USDT")
         ax.legend(loc="best")
         ax.grid()
 
+        # positions plot
         ax = fig.add_subplot(2,1,2)
-
         ax.plot(data["position"], label="Trading position")
         ax.set_ylabel("Trading Position")
+        ax.set_ylim([-1.5, 1.5])
+
+        # show plots
         plt.show()
 
     def plot_perf(self, data):
@@ -93,9 +98,9 @@ class BuyHoldStrategy(_Controller):
         cum_return = round(data["cum_pl"].iloc[-1] * 100, 2)
         print("Profit/Loss [Log Return]: {0}%".format(cum_return))  
 
-        # print profit/loss (simple return)
-        simple_return = (np.exp(data.iloc[-1].cum_pl) - 1) * 100
-        print("Profit/Loss [Simple Return]: {0}%".format(round(simple_return, 2)))  
+        # # print profit/loss (simple return)
+        # simple_return = (np.exp(data.iloc[-1].cum_pl) - 1) * 100
+        # print("Profit/Loss [Simple Return]: {0}%".format(round(simple_return, 2)))  
 
         # print maximum gains (log returns)
         max_cum_pl = round(data["cum_pl"].max() * 100, 2)

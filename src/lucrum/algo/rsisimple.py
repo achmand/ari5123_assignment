@@ -1,71 +1,59 @@
-"""A moving average (SMA OR EMA) crossover strategy/algorithm."""
+"""A simple RSI (overbought/oversold) strategy/algorithm."""
 
 # Author: Dylan Vassallo <dylan.vassallo.18@um.edu.mt>
 
 ###### importing dependencies #############################################
-import numpy as np 
+import numpy as np
 import lucrum.algo.pyta as ta 
 import matplotlib.pyplot as plt
 import lucrum.dataconst as dcons
 from .controller import _Controller
 
-###### moving average crossover algorithm #################################
-class MACrossoverAlgo(_Controller):   
-    """An algo trading strategy which uses moving average crossovers.      
+###### simple RSI strategy class ##########################################
+class SimpleRsiAlgo(_Controller):
+    """A simple algo trading strategy which uses RSI overbought/oversold as signals.      
     """
 
-    def gen_features(self, data, lead, lead_t, lag, lag_t, price=dcons.CLOSE):
-        """Generates features which include the lead and lag moving averages.
+    def gen_features(self, data, window, price=dcons.CLOSE):
+        """Generates features for RSI which includes a value between 0 and 100.
         
         Parameters 
         ----------
         data: pandas dataframe 
             Holds data/prices for a specific asset, expected to have OHLC.
-        lead: str, 'sma', 'ema'
-            Used to specify the type of moving average to be used for the lead moving average. 
-            -'sma': the simple moving average
-            -'ema': exponential moving average
-        lead_t: integer 
-            The time window used for the lead moving average. 
-        lag: str, 'sma', 'ema'
-            Used to specify the type of moving average to be used for the lag moving average. 
-            -'sma': the simple moving average
-            -'ema': exponential moving average
+        window: integer
+            The time window used for the RSI.
         price: str, optional(defaulf='close')
             The column name used to apply the lead and lag moving average on. 
             By default this will be applied to the closing price ('close') 
             but this can be applied to any column with numeric values.  
         """
 
-        # the same type of moving average 
-        if lead == lag:
-            ta_config = {
-                lead:[("lead_ma", {"timeperiod":lead_t, "price":price}),
-                      ("lag_ma", {"timeperiod":lag_t, "price":price})]
-            }
-        # different types of moving average
-        else: 
-            ta_config = {
-                lead:[("lead_ma", {"timeperiod":lead_t, "price":price})],
-                lag:[("lag_ma",   {"timeperiod":lag_t, "price":price})]
-            }
-        
-        # apply moving averages to dataframe
+        # set config for ta-lib
+        ta_config = {
+            "rsi":[("rsi", {"timeperiod":window, "price":price})]
+        }
+
+        # apply RSI to dataframe
         ta.apply_ta(data, ta_config)
 
-    def gen_positions(self, data):
-        """Generates postions based on the features generated (lead/lag moving avgs).
+    def gen_positions(self, data, upper, lower):
+        """Generates postions based on the overbough/oversolde.
            This generates both short and long positions. 
 
         Parameters 
         ----------
         data: pandas dataframe 
             Holds data/prices/features for a specific asset.
+        upper: int
+            The upper bound which indicates an overbought (> 1 and < 100).
+        lower: int
+            The lower bound which indicates an oversold (> 1 and < 100) must be smaller than upper.
         """
 
         # generates signals 
-        data["long_signal"] = data["lead_ma"] > data["lag_ma"]   # long signal
-        data["short_signal"] = data["lead_ma"] <= data["lag_ma"] # short signal
+        data["long_signal"] = data["rsi"] < lower   # long signal (oversold so go long)
+        data["short_signal"] = data["rsi"] > upper  # short signal (overbought so short)
 
         # generate positions 
         data["long_position"] = 0  # initially set to 0 
@@ -80,10 +68,12 @@ class MACrossoverAlgo(_Controller):
         # except when we are not in a trade at all (position is equal to 0)
         data["apply_fee"] = 0
         data["apply_fee"] = ((data.position != data.position.shift(-1)) | (data.position != data.position.shift(1))).astype(int)
-       
-        # where position was equal to 0 don't apply fee (first change)
-        # this can be done since we are always in a position after our first position
-        data.loc[data.position == 0, "apply_fee"] = 0 
+        data.loc[data.position == 0, "apply_fee"] = 0  
+        
+        # now since we can close a position and go on sit/hold 
+        # we need to apply a fee when we exited position and the next position is 0 
+        # this happens when you get in a position and exit after the next interval 
+        data.loc[(data.position == 0) & (data.apply_fee.shift(1) == 1) & (data.position.shift(1) != data.position.shift(2)) , "apply_fee"] = 1  
 
     def evaluate(self, data, trading_fee):
         """Evaluates/calculates performance from the positions generated.  
@@ -118,26 +108,31 @@ class MACrossoverAlgo(_Controller):
         data["cum_pl"] = data["pl"].cumsum()
 
     def plot_pos(self, data):
-
+        
         # figure size
         fig = plt.figure(figsize=(15,9))
-
-        # closing/ema plot 
-        ax = fig.add_subplot(2,1,1)
+        
+        # closing price plot 
+        ax = fig.add_subplot(3,1,1)
         ax.plot(data["close"], label="Close Price")
-        ax.plot(data["lead_ma"], label="Short MA")
-        ax.plot(data["lag_ma"], label="Long MA")
         ax.set_ylabel("USDT")
         ax.legend(loc="best")
         ax.grid()
 
-        # position plot
-        ax = fig.add_subplot(2,1,2)
+        # RSI plot 
+        ax = fig.add_subplot(3,1,2)
+        ax.plot(data["rsi"], label="RSI")
+        ax.set_ylabel("RSI")
+        ax.set_ylim([0, 100])
+        ax.grid()
+
+        # positions plot 
+        ax = fig.add_subplot(3,1,3)
         ax.plot(data["position"], label="Trading position")
         ax.set_ylabel("Trading Position")
         ax.set_ylim([-1.5, 1.5])
 
-        # show plot
+        # show plot 
         plt.show()
 
     def plot_perf(self, data):
