@@ -39,7 +39,7 @@ class SimpleRsiAlgo(_Controller):
         ta.apply_ta(data, ta_config)
 
     def gen_positions(self, data, upper, lower):
-        """Generates postions based on the overbough/oversolde.
+        """Generates postions based on the overbought/oversold.
            This generates both short and long positions. 
 
         Parameters 
