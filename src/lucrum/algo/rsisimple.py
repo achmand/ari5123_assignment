@@ -7,6 +7,7 @@ import numpy as np
 import lucrum.algo.pyta as ta 
 import matplotlib.pyplot as plt
 import lucrum.dataconst as dcons
+import lucrum.algo.finstats as fs
 from .controller import _Controller
 
 ###### simple RSI strategy class ##########################################
@@ -180,5 +181,5 @@ class SimpleRsiAlgo(_Controller):
         # print sharpe ratio 
         # 96 (15 minutes in a day) and 365 days for the crypto market 
         # we compute the sharpe ratio based on profit and loss 
-        sharpe_ratio = np.sqrt(96 * 365) * data.pl.mean() / data.pl.std()
+        sharpe_ratio = fs.sharpe_ratio(96*365, data.pl)
         print("Annualised Sharpe Ratio: {0}".format(round(sharpe_ratio, 6)))

@@ -30,4 +30,7 @@ def dist_moments(x):
 
     return np.mean(x), np.std(x), skew(x), kurtosis(x)
 
+def sharpe_ratio(n, returns):
+    sharpe_ratio = np.sqrt(96 * 365) * returns.mean() / returns.std()
+    return sharpe_ratio
 ###########################################################################

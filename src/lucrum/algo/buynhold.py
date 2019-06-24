@@ -6,6 +6,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import lucrum.dataconst as dcons
+import lucrum.algo.finstats as fs
 from .controller import _Controller
 
 ###### buy n hold strategy class ##########################################
@@ -112,8 +113,8 @@ class BuyHoldStrategy(_Controller):
 
         # print sharpe ratio 
         # 96 (15 minutes in a day) and 365 days for the crypto market 
-        # since we are always holding use log returns 
-        sharpe_ratio = np.sqrt(96 * 365) * data.log_returns.mean() / data.log_returns.std()
+        # we compute the sharpe ratio based on profit and loss 
+        sharpe_ratio = fs.sharpe_ratio(96*365, data.log_returns)
         print("Annualised Sharpe Ratio: {0}".format(round(sharpe_ratio, 6)))
 
 ###########################################################################
