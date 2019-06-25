@@ -47,7 +47,7 @@ class BuyHoldStrategy(_Controller):
         data["log_returns"] = data.logprices - data.logprices.shift(1)
 
         # since we execute only one trade apply trading fee to first log return only 
-        data.iloc[1, data.columns.get_loc("log_returns")] = (1-trading_fee) * data.iloc[1]["log_returns"]
+        data.iloc[1, data.columns.get_loc("log_returns")] = (data.iloc[1]["log_returns"] - (trading_fee * np.abs(data.iloc[1]["log_returns"])))
 
         # to get p/l we just need to sum up the log returns 
         data["cum_pl"] = data["log_returns"].cumsum()

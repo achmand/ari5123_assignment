@@ -71,10 +71,10 @@ class SimpleWilliamRAlgo(_Controller):
         data["apply_fee"] = ((data.position != data.position.shift(-1)) | (data.position != data.position.shift(1))).astype(int)
         data.loc[data.position == 0, "apply_fee"] = 0  
         
-        # now since we can close a position and go on sit/hold 
-        # we need to apply a fee when we exited position and the next position is 0 
-        # this happens when you get in a position and exit after the next interval 
-        data.loc[(data.position == 0) & (data.apply_fee.shift(1) == 1) & (data.position.shift(1) != data.position.shift(2)) , "apply_fee"] = 1  
+        # if a you take a position and you close it immediately apply 
+        # the fee *2 which means you entered and exit at the same candle 
+        # eg. 0 1 0 or -1 1 -1 or 1 -1 1
+        data.loc[(data.position != 0) & (data.position.shift(1) != data.position ) & (data.position.shift(-1) != data.position) , "apply_fee"] = 2 
 
     def evaluate(self, data, trading_fee):
         """Evaluates/calculates performance from the positions generated.  
@@ -91,19 +91,8 @@ class SimpleWilliamRAlgo(_Controller):
         data["logprices"] = np.log(data[dcons.CLOSE])
         data["log_returns"] = data.logprices - data.logprices.shift(1)
         
-        # calculate profit and loss 
-        data["pl"] = data["position"].shift(1) * data["log_returns"]
-
-        # new we need to apply fee in profit and loss when we entered or exited a trade
-        # first we get index where a fee is suppose to be applied 
-        fee_indices = data.loc[data.apply_fee == 1].index.values + 1
-
-        # must check index does not go beyond shape 
-        # special case when last row is a trade 
-        fee_indices = fee_indices[fee_indices < data.shape[0]]
-
-        # now we apply fee to the p/l at location where the trade was made + 1
-        data.loc[fee_indices , "pl"] =  (1 - trading_fee) * data["pl"]
+        # calculate profit and loss + tx cost 
+        data["pl"] = (data["position"].shift(1) * data["log_returns"]) - ((data.apply_fee.shift(1) * trading_fee) * np.abs(data["log_returns"]))
 
         # cumulative profit and loss 
         data["cum_pl"] = data["pl"].cumsum()
@@ -154,13 +143,14 @@ class SimpleWilliamRAlgo(_Controller):
         time_from = data.head(1)["open_time"].astype(str).values[0]
         time_to = data.tail(1)["close_time"].astype(str).values[0]
         print("From {} to {} ({} days)\n".format(time_from, time_to, days_difference))
-        
+       
         # print total number of trades
         # we can sum up every time a fee was applied to get total trades 
-        print("Total number of trades: {}".format(data.apply_fee.sum()))
+        total_trades = data.apply_fee.sum()
+        print("Total number of trades: {}".format(total_trades))
 
         # print avg. trades per date
-        print("Avg. trades per day: {}".format(round(data.apply_fee.sum() / days_difference, 2)))
+        print("Avg. trades per day: {}".format(round(total_trades / days_difference, 2)))
 
         # print profit/loss (log returns)
         cum_return = round(data["cum_pl"].iloc[-1] * 100, 2)
