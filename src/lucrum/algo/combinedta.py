@@ -65,6 +65,8 @@ class CombinedTaAlgo(_Controller):
 
         # apply RSI to dataframe
         ta.apply_ta(data, ta_config)
+
+        
         
     def gen_positions(self, 
                       data, 
